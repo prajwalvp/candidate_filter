@@ -31,6 +31,7 @@ def parse_arguments():
     parser.add_argument('--dm_tol',type=float,help='dm tolerance',dest="dm_tol",default=5e-3)
     parser.add_argument('--par',type=str,help='Path to par files of known pulsars',dest="par_path",default='/beegfs/u/prajwalvp/presto_ephemerides/Ter5/par_files_scott')
     parser.add_argument('--rfi',type=str,help='known birdie list name',dest="birdies",default='known_rfi.txt')
+    parser.add_argument('--threshold',type=float,help='S/N threshold to apply when reading candidates from input files')
     parser.add_argument('--searchpsr',type=str,help='Flag for filtering known pulsars(Default is no known pulsar filtering(0))',dest="psr_filter",default=0)
     args = parser.parse_args()
     return args
@@ -64,7 +65,10 @@ def main(args):
     # Remove DM candidates below 2 pc cm^-3 - 0 DM + too low a DM to probably be real
     print("Removing candidates below DM of 2 pc cm^-3") 
     df_cands_ini = df_cands_ini[df_cands_ini['dm'] > 2.0]
-
+    
+    # Apply S/N threshold
+    print("Removing candidates below S/N {}".format(args.threshold))
+    df_cands_ini = df_cands_ini[df_cands_ini['snr'] >= args.threshold]
 
     # Get candidate periods and dms
     cand_mid_periods = df_cands_ini['period'].to_numpy()
