@@ -32,8 +32,8 @@ def get_known_rfi(cand_freqs,args):
     # Whole number indices
     #numbers = np.arange(1,opts.h_no,1)
 
-    h = np.arange(1,args.harmonics)
-    ratios = np.outer(h,1.0/h)
+    h = np.arange(1, args.harmonics + 1)
+    ratios = np.outer(h, 1.0 / h)
     all_ratios = np.unique(np.sort(ratios.ravel()))
 
 
@@ -43,9 +43,10 @@ def get_known_rfi(cand_freqs,args):
 
     for number in all_ratios:
         for rfi in known_rfi_freqs:
-            w_harmonics.append([a for a in cand_freqs if abs(a - round(number*rfi))/(a)<args.p_tol])
+            w_harmonics.append([a for a in cand_freqs if (abs(a - number*rfi)/a)<args.p_tol])
 
     all_harmonics=sorted(list(set(list(itertools.chain(*w_harmonics)))))
+    print(all_harmonics)
     rfi_indices = np.array([np.where(cand_freqs==h)[0][0] for h in all_harmonics])
     log.info("Number of known RFI based candidates: {len(rfi_indices)}")
 
