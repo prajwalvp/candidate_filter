@@ -21,36 +21,30 @@ log.setLevel('INFO')
 
 
 
-def get_known_rfi(cand_freqs,args):
-
+def get_known_rfi(cand_freqs, birdie_list_file, harmonics, p_tol):
     # Get all candidate frequencies
-    known_rfi_freqs = np.loadtxt(args.birdies,dtype=float) 
-    #known_rfi_periods = 1/known_rfi_freqs
-    #print (known_rfi_periods)
-
-
-    # Whole number indices
-    #numbers = np.arange(1,opts.h_no,1)
-
-    h = np.arange(1, args.harmonics + 1)
+    known_rfi_freqs = np.loadtxt(birdie_list_file, dtype=float) 
+    h = np.arange(1, harmonics + 1)
     ratios = np.outer(h, 1.0 / h)
     all_ratios = np.unique(np.sort(ratios.ravel()))
 
-
-    # known rfi frequencies
-
     w_harmonics=[]
-
     for number in all_ratios:
         for rfi in known_rfi_freqs:
-            w_harmonics.append([a for a in cand_freqs if (abs(a - number*rfi)/a)<args.p_tol])
-
+            subs = []
+            for a in cand_freqs:
+                if (abs(a - number * rfi) / a) < p_tol:
+                    print("Matched candidate {} Hz with harmonic {} of RFI {} Hz".format(a, number, rfi))
+                    subs.append(a)
+            w_harmonics.append(subs)    
+    print(w_harmonics)
     all_harmonics=sorted(list(set(list(itertools.chain(*w_harmonics)))))
-    print(all_harmonics)
-    rfi_indices = np.array([np.where(cand_freqs==h)[0][0] for h in all_harmonics])
-    log.info("Number of known RFI based candidates: {len(rfi_indices)}")
-
-    return rfi_indices
+    print("Matched the following harmonics: {}".format(all_harmonics))
+    rfi_indices = []
+    for h in all_harmonics:
+        rfi_indices.extend(np.where(cand_freqs==h)[0])
+    log.info("Number of known RFI based candidates: {}".format(len(rfi_indices)))    
+    return np.array(rfi_indices)
 
 
 

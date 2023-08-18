@@ -15,9 +15,15 @@ def read_candidate_files(files, verbose=True):
 
     all_rows = []
     file_index = 0
+    corrupted_count = 0
     for file in files:
         file = file.replace(',','') 
-        tree = ET.parse(file)
+        try:
+            tree = ET.parse(file)
+        except:
+            print("{} is corrupted, skipping file".format(file))
+            corrupted_count += 1
+            continue
         root = tree.getroot()
 
         # Indexing might break when the candidate files look differently
@@ -40,7 +46,9 @@ def read_candidate_files(files, verbose=True):
                              "fft_size": fft_size,           
                              'obs_length_over_c': obs_length_over_c}
         file_index += 1
-
+    
+    print("{} inputs were corrupted ({}%).".format(
+	corrupted_count, 100.0 * corrupted_count / len(files)))
     df_candidates = pd.DataFrame(all_rows)
 
     # Additional type casting may be necessary or not necessary at all
