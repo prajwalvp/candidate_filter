@@ -93,8 +93,13 @@ def main(args):
 
     # Read files into a single pandas DataFrame
     with open(args.input, "r") as f:
-        xml_list = [i.strip() for i in f.readlines() if i]
-    df_cands_ini, obs_meta_data = reading_cands.read_candidate_files(xml_list)
+        candidate_files_list = [i.strip() for i in f.readlines() if i]
+    
+    if candidate_files_list[0].endswith('.xml'):
+        df_cands_ini, obs_meta_data = reading_cands.read_xml_candidate_files(candidate_files_list)
+    
+    if candidate_files_list[0].endswith('.csv'):
+        df_cands_ini, obs_meta_data = reading_cands.read_csv_candidate_files(candidate_files_list)
 
     if args.debug:
         df_cands_ini.to_csv("all_candidates.csv")
