@@ -5,7 +5,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 
-def read_candidate_files(files, verbose=True):
+def read_candidate_files(files, verbose=True, snr_thresh=0.0, max_cands=0):
     # Reads candidates files and include the candidates in a single pandas DataFrame
 
     #files = glob.glob(path + '*/overview.xml')
@@ -29,7 +29,7 @@ def read_candidate_files(files, verbose=True):
         # Indexing might break when the candidate files look differently
         candidates = root[6]
 
-        all_rows.extend(create_row(root, candidates, file, file_index))
+        all_rows.extend(create_row(root, candidates, file, file_index, snr_thresh, max_cands))
 
         # Grab needed meta data of obs
         # Maybe should grab all values and check if comparison between files makes sense
@@ -47,8 +47,7 @@ def read_candidate_files(files, verbose=True):
                              'obs_length_over_c': obs_length_over_c}
         file_index += 1
     
-    print("{} inputs were corrupted ({}%).".format(
-	corrupted_count, 100.0 * corrupted_count / len(files)))
+    print("{} inputs were corrupted ({}%).".format(corrupted_count, 100.0 * corrupted_count / len(files)))
     df_candidates = pd.DataFrame(all_rows)
 
     # Additional type casting may be necessary or not necessary at all
@@ -61,13 +60,12 @@ def read_candidate_files(files, verbose=True):
     # sort by snr
     df_candidates.sort_values('snr', inplace=True, ascending=False)
     df_candidates.reset_index(inplace=True, drop=True)
-
     return df_candidates, obs_meta_data
 
 
-def create_row(root, candidates, file, file_index):
+def create_row(root, candidates, file, file_index, snr_thresh=0.0, max_cands=0):
     # Read a candidate file and creates data rows
-
+    print("Extracting {}candidates from {} with threshold {}".format("{} ".format(max_cands) if max_cands!=0 else "", file, snr_thresh))
     src_raj = float(root[1].find("src_raj").text)
     src_dej = float(root[1].find("src_dej").text)
     src_rajd, src_dejd = convert_to_deg(src_raj, src_dej)
@@ -76,6 +74,7 @@ def create_row(root, candidates, file, file_index):
     # Enter attributes that should be ignored here
     ignored_entries = ['candidate']
     #ignored_entries = ['candidate', 'byte_offset', 'opt_period', 'folded_snr']
+    count = 0
     for candidate in candidates:
         new_dict = {}
         for can_entry in candidate.iter():
@@ -89,9 +88,15 @@ def create_row(root, candidates, file, file_index):
         new_dict['src_dejd'] = src_dejd
         new_dict['file_index'] = file_index
         new_dict['file'] = file
-        rows.append(new_dict)
+        if ((max_cands != 0) and (count > max_cands)):
+            break
+        else:
+            count += 1
+         
+        if float(new_dict['snr']) >= snr_thresh:
+            rows.append(new_dict)
+    print("Read {} candidates from file {}".format(len(rows), file))
     return rows
-
 
 def convert_to_deg(ra, dec):
     # Convert hour angle strings to degrees

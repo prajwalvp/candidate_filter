@@ -34,6 +34,7 @@ def parse_arguments():
                         dest="par_path",default='/beegfs/u/prajwalvp/presto_ephemerides/Ter5/par_files_scott')
     parser.add_argument('--rfi',type=str,help='known birdie list name',dest="birdies",default=None)
     parser.add_argument('--threshold',type=float,help='S/N threshold to apply when reading candidates from input files')
+    parser.add_argument('--max_cands', type=int,help='maximum number of candidates that can be loaded from one input file',default=None)
     parser.add_argument('--searchpsr',type=str,help='Flag for filtering known pulsars(Default is no known pulsar filtering(0))',
                         dest="psr_filter",default=0)
     parser.add_argument('--debug', action='store_true', help="Dump all intermediate products during filtering")
@@ -94,7 +95,8 @@ def main(args):
     # Read files into a single pandas DataFrame
     with open(args.input, "r") as f:
         xml_list = [i.strip() for i in f.readlines() if i]
-    df_cands_ini, obs_meta_data = reading_cands.read_candidate_files(xml_list)
+    print("Extracting cands with snr threshold {}".format(args.threshold))
+    df_cands_ini, obs_meta_data = reading_cands.read_candidate_files(xml_list, snr_thresh=float(args.threshold), max_cands=int(args.max_cands))
 
     if args.debug:
         df_cands_ini.to_csv("all_candidates.csv")
